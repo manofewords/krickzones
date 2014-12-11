@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      path {
+        stroke-linejoin: round;
+      }
+      .dot { 
+        stroke: transparent; fill: #000000; 
+      }
+      .zone0,
+      .zone1,
+      .zone2,
+      .zone3,
+      .zone4,
+      .zone5,
+      .zone6,
+      .zone7,
+      .zone8,
+      .zone9 {
+        stroke: transparent
+      }
+      .zone-1 {
+        fill: transparent; 
+      }
+      .zone0, .zone5 {
+        fill: #288DF6;
+      }
+      .zone1, .zone6 {
+        fill: #EDA321;
+      }
+      .zone2, .zone7 {
+        fill: #D2EA32;
+      }
+      .zone3, .zone8 {
+        fill: #23D36D;
+      }
+      .zone4, .zone9 {
+        fill: #F62B19;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script>
+    // canvas size
+    var width = 2000,
+        height = 2000;
+
+    // this seems relevant here: http://xkcd.com/977/
+    var projection = d3.geo.mercator() // good luck trying to understand map projections
+        .center([6.14, 46.2]) // center on Geneva
+        .scale(600000) // zoom in
+        .translate([width/2, height/2])
+
+    var path = d3.geo.path()
+        .projection(projection)
+        .pointRadius(1.5);
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    d3.json("mapping-1384694525194.geojson", function(error, map) {
+      if(error) {
+        console.log(error);
+      }
+
+      // http://bl.ocks.org/zzolo/982c5a3b679d35047063
+      var voronoiStops = d3.geom.voronoi()
+        .x(function(d) { return projection(d.geometry.coordinates)[0]; })
+        .y(function(d) { return projection(d.geometry.coordinates)[1]; })
+        .clipExtent([[0, 0], [width, height]]);
+
+      // http://strongriley.github.io/d3/ex/voronoi.html
+      svg.append("g")
+        .selectAll("path")
+        .data(voronoiStops(map.features))
+        .enter()
+        .append("path")
+        .attr("class", function(d) { if(d) return "zone" + d.point.properties.zone;})
+        .attr("d", function(d) { if(d) return "M" + d.join("L") + "Z"; });
+
+      svg.append("g")
+        .selectAll("path")
+        .data(map.features)
+        .enter()
+        .append("path")
+        .attr("class", "dot")
+        .attr("d", path);
+    });
+    </script>
+  </body>
+</html>
